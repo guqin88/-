@@ -189,3 +189,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
 .native-app .app-header {
   padding-top: 44px;
 }
+
+/* ============================================================ */
+/* Mobile: 移除 iPhone 外壳, 全屏展示 */
+/* ============================================================ */
+@media (max-width: 430px) {
+  body {
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 100dvh;
+  }
+  .phone-frame {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .dynamic-island {
+    display: none;
+  }
+  .app-header {
+    padding-top: 12px;
+  }
+  .app-content {
+    padding-bottom: 90px;
+  }
+  .bottom-tabs {
+    padding-bottom: 20px;
+  }
+}
