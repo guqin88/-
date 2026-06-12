@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记账本</title>
+<script src="js/lib/chart.umd.min.js"></script>
+<link rel="stylesheet" href="css/app.css">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>if(window.Capacitor&&window.Capacitor.isNative){document.documentElement.classList.add("native-app")}</script>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="dynamic-island"><div class="notch"></div></div>
+
+  <div class="app-header">
+    <h1 id="pageTitle">总览</h1>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="apiStatus" style="font-size:10px;color:rgba(0,0,0,0.15);cursor:default" title="AI 未配置">⚫</span>
+      <button onclick="openSettings()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text)" title="AI 设置">⚙️</button>
+    </div>
+    <div class="month-selector">
+      <button onclick="changeMonth(-1)">&#8249;</button>
+      <span id="currentMonth"></span>
+      <button onclick="changeMonth(1)">&#8250;</button>
+    </div>
+  </div>
+
+  <div class="app-content" id="appContent">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="card">
+        <div class="summary-grid">
+          <div class="summary-item income"><div class="label">收入</div><div class="value" id="dashIncome">¥0</div></div>
+          <div class="summary-item expense"><div class="label">支出</div><div class="value" id="dashExpense">¥0</div></div>
+          <div class="summary-item savings"><div class="label">存款</div><div class="value" id="dashSavings">¥0</div></div>
+          <div class="summary-item surplus"><div class="label">盈余</div><div class="value" id="dashSurplus">¥0</div></div>
+        </div>
+      </div>
+      <div class="quick-stats">
+        <div class="quick-stat"><div class="qs-value" id="dashRedpacket">¥0</div><div class="qs-label">红包</div></div>
+        <div class="quick-stat"><div class="qs-value" id="dashLoan">¥0</div><div class="qs-label">借贷还款</div></div>
+        <div class="quick-stat"><div class="qs-value" id="dashMeals">¥0</div><div class="qs-label">饮食</div></div>
+      </div>
+      <div class="card"><div class="card-title">收入构成</div><div id="incomeBreakdownContent" style="font-size:13px;color:var(--text-secondary)">暂无收入</div></div>
+      <div class="card"><div class="card-title">借贷构成</div><div id="loanBreakdownContent" style="font-size:13px;color:var(--text-secondary)">暂无借贷</div></div>
+      <div class="section-title">近期记录</div>
+      <div id="dashboardRecords"></div>
+      <div class="voice-fab"><button class="voice-fab-btn" onclick="openVoiceModal()" title="语音记账">🎤</button></div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="page" id="page-records">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="openAddModal()">+ 手动添加</button>
+        <button class="btn btn-info btn-sm" style="flex:1" onclick="openVoiceModal()">🎤 语音记账</button>
+      </div>
+      <div id="recordsList"></div>
+    </div>
+
+    <!-- MEALS - FOOD TRACKING -->
+    <div class="page" id="page-meals">
+      <div class="meal-date-nav">
+        <button onclick="changeMealDay(-1)">&#8249; 前一天</button>
+        <span class="md-title" id="mealDayTitle">今天</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="voice-meal-btn" onclick="openMealVoiceModal()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,0.25)">🎤 语音输入</button>
+          <button onclick="changeMealDay(1)">后一天 &#8250;</button>
+        </div>
+      </div>
+
+      <div id="dailyHealthDashboard"></div>
+      <button class="btn btn-info btn-sm btn-block" onclick="runAIAnalysis('meal')" style="margin-bottom:10px">🤖 AI 分析今日饮食</button>
+
+      <!-- Breakfast -->
+      <div class="meal-section" id="mealSection-breakfast">
+        <div class="meal-header" onclick="toggleMealSection('breakfast')">
+          <span>🌅 早餐 <span class="meal-time">7:00-9:00</span></span>
+          <span id="breakfastCount">0 项</span>
+        </div>
+        <div class="meal-body" id="breakfastBody"></div>
+      </div>
+
+      <!-- Lunch -->
+      <div class="meal-section" id="mealSection-lunch">
+        <div class="meal-header" onclick="toggleMealSection('lunch')">
+          <span>☀️ 午餐 <span class="meal-time">11:30-13:30</span></span>
+          <span id="lunchCount">0 项</span>
+        </div>
+        <div class="meal-body" id="lunchBody"></div>
+      </div>
+
+      <!-- Dinner -->
+      <div class="meal-section" id="mealSection-dinner">
+        <div class="meal-header" onclick="toggleMealSection('dinner')">
+          <span>🌙 晚餐 <span class="meal-time">17:30-20:00</span></span>
+          <span id="dinnerCount">0 项</span>
+        </div>
+        <div class="meal-body" id="dinnerBody"></div>
+      </div>
+
+      <!-- Snacks -->
+      <div class="meal-section" id="mealSection-snack">
+        <div class="meal-header" onclick="toggleMealSection('snack')">
+          <span>🍪 加餐 / 饮品 <span class="meal-time">全天</span></span>
+          <span id="snackCount">0 项</span>
+        </div>
+        <div class="meal-body" id="snackBody"></div>
+      </div>
+    </div>
+
+    <!-- HEALTH -->
+    <div class="page" id="page-health">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="openHealthModal()">➕ 记录健康</button>
+        <button class="btn btn-info btn-sm" style="flex:1" onclick="openHealthVoiceModal()">🎤 语音录入</button>
+      </div>
+      <div class="card"><div class="card-title">医保余额</div><div id="insuranceInfo"><div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无数据</div></div></div>
+      <div class="section-title">就医记录</div>
+      <div id="healthRecords"></div>
+      <div class="section-title">运动记录</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn btn-purple btn-sm" style="flex:1" onclick="openExerciseModal()">➕ 记录运动</button>
+        <button class="btn btn-info btn-sm" style="flex:1" onclick="openHealthVoiceModal()">🎤 语音录入</button>
+      </div>
+      <div id="exerciseRecords"></div>
+      <button class="btn btn-info btn-sm btn-block" onclick="runAIAnalysis('exercise')" style="margin-bottom:10px">🤖 AI 分析健康与运动</button>
+      <div class="card"><div class="card-title">运动统计</div><div id="exerciseSummary"><div style="text-align:center;padding:20px;color:var(--text-secondary)">暂无运动数据</div></div></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="page" id="page-analysis">
+      <div class="card"><div class="card-title">支出分类</div><div class="chart-container"><canvas id="categoryChart"></canvas></div></div>
+      <div class="card"><div class="card-title">收支趋势</div><div class="chart-container"><canvas id="trendChart"></canvas></div></div>
+      <div class="card"><div class="card-title">超支分析</div><div id="overspendAnalysis"></div></div>
+      <div class="card"><div class="card-title">预算建议</div><div id="suggestions"></div></div>
+      <div class="card"><div class="card-title">📊 综合月报</div><div id="monthlyReport"><div style="text-align:center;padding:20px;color:var(--text-secondary)">数据不足，下月生成完整报告</div></div></div>
+    </div>
+  
+<div class="modal-overlay" id="mealVoiceModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🎤 语音记录饮食</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+        说出你今天吃了什么，例如：“早餐吃了两个鸡蛋和一杯牛奶，中午吃了西兰花炒牛肉和米饭”
+      </p>
+      <div id="mealVoiceIdle" style="text-align:center;padding:20px 0">
+        <button class="btn btn-danger" style="width:80px;height:80px;border-radius:50%;font-size:32px" onclick="startMealVoiceInput()">🎤</button>
+        <div style="margin-top:12px;font-size:14px;color:var(--text-secondary)">点击麦克风开始说话</div>
+      </div>
+      <div id="mealVoiceListening" style="display:none;text-align:center;padding:10px 0">
+        <div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="voice-status" id="mealVoiceStatus">正在聆听...</div>
+        <div class="voice-result-box" id="mealVoiceTranscript"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="stopMealVoiceInput()">停止录音</button>
+      </div>
+      <div id="mealVoiceResult" style="display:none">
+        <div id="mealVoiceParsedResult"></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin:8px 0">确认后自动添加到今日饮食记录</div>
+        <div class="voice-buttons">
+          <button class="btn btn-danger btn-sm" onclick="resetMealVoiceInput()">重新录音</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmMealVoiceSave()">确认添加</button>
+        </div>
+      </div>
+      <div id="mealVoiceUnsupported" style="display:none;text-align:center;padding:20px;color:var(--text-secondary)">
+        <p>您的浏览器不支持语音识别。</p>
+        <p style="font-size:12px;margin-top:8px">请使用 Chrome 浏览器。</p>
+      </div>
+    </div>
+  </div>
+<div class="modal-overlay" id="healthVoiceModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🎤 语音记录健康</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+        说出健康或运动信息，例如：“今天去看了骨科花了200”、“医保余额还有3500”、“爬了3小时山”
+      </p>
+      <div id="healthVoiceIdle" style="text-align:center;padding:20px 0">
+        <button class="btn btn-danger" style="width:80px;height:80px;border-radius:50%;font-size:32px" onclick="startHealthVoiceInput()">🎤</button>
+        <div style="margin-top:12px;font-size:14px;color:var(--text-secondary)">点击麦克风开始说话</div>
+      </div>
+      <div id="healthVoiceListening" style="display:none;text-align:center;padding:10px 0">
+        <div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="voice-status" id="healthVoiceStatus">正在聆听...</div>
+        <div class="voice-result-box" id="healthVoiceTranscript"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="stopHealthVoiceInput()">停止录音</button>
+      </div>
+      <div id="healthVoiceResult" style="display:none">
+        <div id="healthVoiceParsedResult"></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin:8px 0">确认后自动添加到健康记录</div>
+        <div class="voice-buttons">
+          <button class="btn btn-danger btn-sm" onclick="resetHealthVoiceInput()">重新录音</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmHealthVoiceSave()">确认添加</button>
+        </div>
+      </div>
+      <div id="healthVoiceUnsupported" style="display:none;text-align:center;padding:20px;color:var(--text-secondary)">
+        <p>您的浏览器不支持语音识别。</p>
+        <p style="font-size:12px;margin-top:8px">请使用 Chrome 浏览器。</p>
+      </div>
+    </div>
+  </div>
+<div class="modal-overlay" id="exerciseModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🏃 记录运动</div>
+      <div class="form-group"><label>运动类型</label>
+        <select id="exerciseType">
+          <option value="爬山">爬山</option>
+          <option value="自行车">自行车</option>
+          <option value="八段锦">八段锦</option>
+          <option value="跑步">跑步</option>
+          <option value="游泳">游泳</option>
+          <option value="璑璜">璑璜</option>
+          <option value="力量训练">力量训练</option>
+          <option value="散步">散步</option>
+          <option value="公园太极">公园太极</option>
+          <option value="羽毛球">羽毛球</option>
+          <option value="丝梭">丝梭</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group"><label>运动时长 (分钟)</label><input type="number" id="exerciseDuration" placeholder="30" min="1"></div>
+      <div class="form-group"><label>日期</label><input type="date" id="exerciseDate"></div>
+      <div class="form-group"><label>备注</label><textarea id="exerciseNote" placeholder="运动感受或登高测试（如爬山高度、自行车距离）..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveExercise()">保存</button>
+    </div>
+  </div>
+<div class="modal-overlay voice-modal" id="aiResultModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="aiResultTitle">🤖 AI 分析</div>
+      <div id="aiResultContent" style="display:none;font-size:14px;line-height:1.8;padding:4px 0;white-space:pre-wrap;color:var(--text)"></div>
+      <div id="aiResultLoading" style="text-align:center;padding:20px">
+        <div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <p style="font-size:13px;color:var(--text-secondary)">AI 正在分析数据，请稍候...</p>
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('aiResultModal').classList.remove('open')" style="margin-top:8px">关闭</button>
+    </div>
+  </div>
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⚙️ AI 设置</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">配置 AI API 用于饮食健康分析和运动建议。支持任何 OpenAI 兼容接口。</p>
+      <div class="form-group"><label>API 接口地址</label>
+        <select id="apiProvider" onchange="onProviderChange()">
+          <option value="https://api.deepseek.com">DeepSeek</option>
+          <option value="https://api.openai.com">OpenAI</option>
+          <option value="https://api.openrouter.ai/v1">OpenRouter</option>
+          <option value="custom">自定义...</option>
+        </select>
+      </div>
+      <div class="form-group" id="customEndpointGroup" style="display:none"><label>自定义接口地址</label><input type="text" id="customEndpoint" placeholder="https://your-api.com/v1"></div>
+      <div class="form-group"><label>API Key</label><input type="password" id="apiKey" placeholder="sk-..." style="font-size:13px"></div>
+      <div class="form-group"><label>模型名称</label><input type="text" id="apiModel" placeholder="deepseek-chat / gpt-4o-mini / ..."></div>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6">只会用于饮食健康分析和运动建议，不会发送财务数据。API Key 只存在本地浏览器。</p>
+      
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="card-title" style="margin-bottom:8px">📦 数据备份</div>
+        <button class="btn btn-info btn-sm btn-block" onclick="exportBackup()" style="margin-bottom:6px">⬇️ 导出备份</button>
+        <div class="form-group" style="margin-bottom:0">
+          <label>导入备份</label>
+          <input type="file" accept=".zhang,application/json" onchange="importBackup(this.files[0])" style="font-size:13px">
+        </div>
+      </div>
+<button class="btn btn-primary" onclick="saveApiConfig()">保存配置</button>
+      <button class="btn btn-outline btn-sm btn-block" style="margin-top:8px" onclick="document.getElementById('settingsModal').classList.remove('open')">取消</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Bottom Tabs -->
+  <div class="bottom-tabs">
+    <button class="tab active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>总览</span>
+    </button>
+    <button class="tab" data-page="records" onclick="switchPage('records')">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      <span>记账</span>
+    </button>
+    <button class="tab" data-page="meals" onclick="switchPage('meals')">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <span>饮食</span>
+    </button>
+    <button class="tab" data-page="health" onclick="switchPage('health')">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>健康</span>
+    </button>
+    <button class="tab" data-page="analysis" onclick="switchPage('analysis')">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>分析</span>
+    </button>
+    
+  </div>
+
+  <!-- VOICE MODAL -->
+  <div class="modal-overlay" id="voiceModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🎤 语音记账</div>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">说出记账内容，例如："工资发了8000"、"中午吃饭花了35"、"还花呗1000"</p>
+      <div id="voiceIdle" style="text-align:center;padding:20px 0">
+        <button class="btn btn-danger" style="width:80px;height:80px;border-radius:50%;font-size:32px" onclick="startVoiceInput()">🎤</button>
+        <div style="margin-top:12px;font-size:14px;color:var(--text-secondary)">点击麦克风开始说话</div>
+      </div>
+      <div id="voiceListening" style="display:none;text-align:center;padding:10px 0">
+        <div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="voice-status" id="voiceStatus">正在聆听...</div>
+        <div class="voice-result-box" id="voiceTranscript"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="stopVoiceInput()">停止录音</button>
+      </div>
+      <div id="voiceResult" style="display:none">
+        <div class="voice-parsed" id="voiceParsedResult"></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin:8px 0">确认下方信息无误后保存</div>
+        <div class="voice-buttons">
+          <button class="btn btn-danger btn-sm" onclick="resetVoiceInput()">重新录音</button>
+          <button class="btn btn-primary btn-sm" onclick="confirmVoiceSave()">确认保存</button>
+        </div>
+      </div>
+      <div id="voiceUnsupported" style="display:none;text-align:center;padding:20px;color:var(--text-secondary)">
+        <p>您的浏览器不支持语音识别。</p><p style="font-size:12px;margin-top:8px">请使用 Chrome 浏览器。</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="closeVoiceModal();openAddModal()">使用手动输入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD RECORD MODAL -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">添加记录</div>
+      <div class="type-pills" id="recordTypePills">
+        <span class="type-pill active" data-type="expense" onclick="selectType('expense')">支出</span>
+        <span class="type-pill" data-type="income" onclick="selectType('income')">收入</span>
+        <span class="type-pill" data-type="savings" onclick="selectType('savings')">存款</span>
+        <span class="type-pill" data-type="redpacket" onclick="selectType('redpacket')">红包</span>
+        <span class="type-pill" data-type="loan" onclick="selectType('loan')">借贷</span>
+      </div>
+      <div class="form-group" id="incomeSubTypeGroup" style="display:none">
+        <label>收入类型</label>
+        <div class="type-pills" id="incomeSubTypePills">
+          <span class="type-pill active" data-sub="salary" onclick="selectIncomeSub('salary')">工资</span>
+          <span class="type-pill" data-sub="reimbursement" onclick="selectIncomeSub('reimbursement')">报销</span>
+          <span class="type-pill" data-sub="bonus" onclick="selectIncomeSub('bonus')">年终奖</span>
+          <span class="type-pill" data-sub="side_income" onclick="selectIncomeSub('side_income')">副业</span>
+        </div>
+      </div>
+      <div class="form-group" id="loanSubTypeGroup" style="display:none">
+        <label>借贷类型</label>
+        <div class="type-pills" id="loanSubTypePills">
+          <span class="type-pill active" data-sub="huabei" onclick="selectLoanSub('huabei')">花呗</span>
+          <span class="type-pill" data-sub="jd" onclick="selectLoanSub('jd')">京东白条</span>
+          <span class="type-pill" data-sub="credit_card" onclick="selectLoanSub('credit_card')">信用卡</span>
+        </div>
+      </div>
+      <div class="form-group"><label>金额 (¥)</label><input type="number" id="recordAmount" placeholder="0.00" step="0.01"></div>
+      <div class="form-group" id="categoryGroup"><label>分类</label>
+        <select id="recordCategory">
+          <option value="餐饮">餐饮</option><option value="交通">交通</option><option value="购物">购物</option>
+          <option value="娱乐">娱乐</option><option value="居住">居住</option><option value="医疗">医疗</option>
+          <option value="教育">教育</option><option value="通讯">通讯</option><option value="服饰">服饰</option>
+          <option value="日用">日用</option><option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group"><label>日期</label><input type="date" id="recordDate"></div>
+      <div class="form-group"><label>备注</label><textarea id="recordReason" placeholder="记录这笔的原因..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveRecord()">保存</button>
+    </div>
+  </div>
+
+  <!-- HEALTH MODAL -->
+  <div class="modal-overlay" id="healthModal">
+    <div class="modal-sheet" style="overflow-y:auto;max-height:70%;min-height:0" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div>
+      <div class="modal-title">记录健康情况</div>
+      <div class="type-pills" id="healthTypePills">
+        <span class="type-pill active" data-type="visit" onclick="selectHealthType('visit')">就诊</span>
+        <span class="type-pill" data-type="balance" onclick="selectHealthType('balance')">更新医保余额</span>
+      </div>
+      <div class="form-group"><label>日期</label><input type="date" id="healthDate"></div>
+      <div id="healthVisitFields">
+        <div class="form-group"><label>医院名称</label><input type="text" id="healthHospital" placeholder="如：市人民医院"></div>
+        <div class="form-group"><label>就诊科室</label>
+          <select id="healthDepartment">
+            <option value="内科">内科</option>
+            <option value="外科">外科</option>
+            <option value="骨科">骨科</option>
+            <option value="眼科">眼科</option>
+            <option value="耳鼻喉科">耳鼻喉科</option>
+            <option value="皮肤科">皮肤科</option>
+            <option value="妇科">妇科</option>
+            <option value="中医科">中医科</option>
+            <option value="口腔科">口腔科</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group"><label>就诊原因</label><textarea id="healthReason" placeholder="什么症状/检查..."></textarea></div>
+        <div class="form-group"><label>费用 (¥)</label><input type="number" id="healthCost" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div class="form-group"><label>当前医保余额 (¥)</label><input type="number" id="healthInsurance" placeholder="留空则自动计算余额" step="0.01"></div>
+      <button class="btn btn-primary" onclick="saveHealth()">保存</button>
+    </div>
+  </div>
+
+
+
+
+</div>
+
+
+  <!-- MEAL VOICE MODAL -->
+  
+
+  <!-- HEALTH VOICE MODAL -->
+  
+
+  <!-- AI RESULT MODAL -->
+  
+
+  <!-- SETTINGS MODAL -->
+  
+
+  <!-- EXERCISE MODAL -->
+  
+
+<script src="js/food-db.js"></script>
+<!-- Page Modules -->
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/records.js"></script>
+<script src="js/pages/meals.js"></script>
+<script src="js/pages/health.js"></script>
+<script src="js/pages/analysis.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// ============================================================
+// MAIN APP
+// ============================================================
+// DATA LAYER
+// ============================================================
+var STORAGE_KEY = 'zhangzhang_data';
+var currentMonth = new Date();
+var categoryChartInstance = null;
+var trendChartInstance = null;
+var currentRecordType = 'expense';
+var currentIncomeSub = 'salary';
+var currentLoanSub = 'huabei';
+var currentHealthType = 'visit';
+var recognition = null;
+var voiceFinalText = '';
+var voiceParsedRecord = null;
+var currentMealDay = new Date();
+
+var incomeLabels = { salary:'工资', reimbursement:'报销', bonus:'年终奖', side_income:'副业' };
+var loanLabels = { huabei:'花呗', jd:'京东白条', credit_card:'信用卡' };
+var pageTitles = { dashboard:'总览', records:'记账', meals:'饮食', health:'健康', analysis:'分析' };
+
+var mealSlots = ['breakfast','lunch','dinner','snack'];
+var mealSlotNames = { breakfast:'早餐', lunch:'午餐', dinner:'晚餐', snack:'加餐' };
+var mealSlotIcons = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍪' };
+var mealSlotTimes = { breakfast:'7:00-9:00', lunch:'11:30-13:30', dinner:'17:30-20:00', snack:'全天' };
+
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var data = JSON.parse(raw);
+      if (!data.monthlyBudget) data.monthlyBudget = getDefaultData().monthlyBudget;
+      if (!data.healthRecords) data.healthRecords = [];
+      if (!data.mealDays) data.mealDays = {};
+      return data;
+    }
+  } catch(e) {}
+  return getDefaultData();
+}
+
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+
+function formatDate(dateStr) {
+  var d = new Date(dateStr);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function friendlyDate(dateStr) {
+  var d = new Date(dateStr);
+  var today = new Date();
+  var yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  if (formatDate(dateStr) === formatDate(today.toISOString().slice(0,10))) return '今天';
+  if (formatDate(dateStr) === formatDate(yesterday.toISOString().slice(0,10))) return '昨天';
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+
+function formatMoney(val) { return '¥'+Number(val).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function $(id) { return document.getElementById(id); }
+
+// ============================================================
+// ============================================================
+function updateMonthLabel() { $('currentMonth').textContent = currentMonth.getFullYear()+'年'+(currentMonth.getMonth()+1)+'月'; }
+function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth()+delta); updateMonthLabel(); renderAll(); }
+
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  $('page-'+name).classList.add('active');
+  document.querySelector('.tab[data-page="'+name+'"]').classList.add('active');
+  $('pageTitle').textContent = pageTitles[name];
+  $('appContent').scrollTop = 0;
+  renderAll();
+}
+
+// ============================================================
+// TYPE SELECTORS
+// ============================================================
+function selectType(type) {
+  currentRecordType = type;
+  document.querySelectorAll('#recordTypePills .type-pill').forEach(function(p){p.classList.toggle('active',p.dataset.type===type)});
+  $('incomeSubTypeGroup').style.display=(type==='income')?'block':'none';
+  $('loanSubTypeGroup').style.display=(type==='loan')?'block':'none';
+  $('categoryGroup').style.display=(type==='expense')?'block':'none';
+}
+function selectIncomeSub(sub){currentIncomeSub=sub;document.querySelectorAll('#incomeSubTypePills .type-pill').forEach(function(p){p.classList.toggle('active',p.dataset.sub===sub)})}
+function selectLoanSub(sub){currentLoanSub=sub;document.querySelectorAll('#loanSubTypePills .type-pill').forEach(function(p){p.classList.toggle('active',p.dataset.sub===sub)})}
+function selectHealthType(type){currentHealthType=type;document.querySelectorAll('#healthTypePills .type-pill').forEach(function(p){p.classList.toggle('active',p.dataset.type===type)});$('healthVisitFields').style.display=type==='visit'?'block':'none'}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openAddModal(){$('addModal').classList.add('open');$('recordAmount').value='';$('recordReason').value='';$('recordDate').value=new Date().toISOString().slice(0,10);selectType('expense')}
+function openHealthModal(){$('healthModal').classList.add('open');$('healthDate').value=new Date().toISOString().slice(0,10);$('healthHospital').value='';$('healthDepartment').value='内科';$('healthReason').value='';$('healthCost').value='';$('healthInsurance').value='';selectHealthType('visit')}
+document.querySelectorAll('.modal-overlay').forEach(function(el){el.addEventListener('click',function(){this.classList.remove('open')})});
+
+
+// ============================================================
+// HEALTH VOICE INPUT
+// ============================================================
+var healthVoiceRecognition = null;
+var healthVoiceFinalText = '';
+var healthVoiceParsedResult = null;
+
+function openHealthVoiceModal(){
+  healthVoiceFinalText = '';
+  healthVoiceParsedResult = null;
+  var m = document.getElementById('healthVoiceModal');
+  if(!m){alert('语音模块未加载');return}
+  m.classList.add('open');
+  document.getElementById('healthVoiceIdle').style.display = 'block';
+  document.getElementById('healthVoiceListening').style.display = 'none';
+  document.getElementById('healthVoiceResult').style.display = 'none';
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('healthVoiceIdle').style.display = 'none';
+    document.getElementById('healthVoiceUnsupported').style.display = 'block';
+  } else {
+    document.getElementById('healthVoiceUnsupported').style.display = 'none';
+  }
+}
+
+function startHealthVoiceInput(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('浏览器不支持语音识别'); return; }
+  document.getElementById('healthVoiceIdle').style.display = 'none';
+  document.getElementById('healthVoiceListening').style.display = 'block';
+  document.getElementById('healthVoiceResult').style.display = 'none';
+  document.getElementById('healthVoiceTranscript').textContent = '';
+  healthVoiceFinalText = '';
+  healthVoiceRecognition = new SR();
+  healthVoiceRecognition.lang = 'zh-CN';
+  healthVoiceRecognition.continuous = true;
+  healthVoiceRecognition.interimResults = true;
+  healthVoiceRecognition.onresult = function(ev) {
+    var t = '';
+    for (var i = ev.resultIndex; i < ev.results.length; i++) {
+      t += ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) healthVoiceFinalText = t;
+    }
+    document.getElementById('healthVoiceTranscript').textContent = t;
+  };
+  healthVoiceRecognition.onerror = function(ev) {
+    document.getElementById('healthVoiceStatus').textContent = '识别出错: ' + ev.error;
+    setTimeout(function() { stopHealthVoiceInput(); }, 1500);
+  };
+  healthVoiceRecognition.onend = function() {
+    if (document.getElementById('healthVoiceListening').style.display !== 'none') {
+      document.getElementById('healthVoiceStatus').textContent = '录音已结束';
+      processHealthVoiceResult();
+    }
+  };
+  healthVoiceRecognition.start();
+  document.getElementById('healthVoiceStatus').textContent = '正在聆听，请说出健康或运动信息...';
+}
+
+function stopHealthVoiceInput() {
+  if (healthVoiceRecognition) { healthVoiceRecognition.stop(); healthVoiceRecognition = null; }
+  processHealthVoiceResult();
+}
+
+function resetHealthVoiceInput() {
+  if (healthVoiceRecognition) { healthVoiceRecognition.stop(); healthVoiceRecognition = null; }
+  healthVoiceFinalText = ''; healthVoiceParsedResult = null;
+  document.getElementById('healthVoiceIdle').style.display = 'block';
+  document.getElementById('healthVoiceListening').style.display = 'none';
+  document.getElementById('healthVoiceResult').style.display = 'none';
+  document.getElementById('healthVoiceTranscript').textContent = '';
+}
+
+var deptKeywords = {'内科':'内科','外科':'外科','骨科':'骨科','眼科':'眼科','皮肤科':'皮肤科','耳鼻喉':'耳鼻喉科','妇科':'妇科','口腔':'口腔科','中医':'中医科'};
+
+function processHealthVoiceResult() {
+  var text = healthVoiceFinalText || document.getElementById('healthVoiceTranscript').textContent;
+  if (!text.trim()) { resetHealthVoiceInput(); return; }
+  document.getElementById('healthVoiceListening').style.display = 'none';
+  text = text.replace(/[，,。.？?！!；;：:～~、]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  var result = { type: null, data: null };
+
+  // Extract amount
+  function extractAmt(t) {
+    var m = t.match(/(\d+\.?\d*)\s*万/); if(m) return parseFloat(m[1])*10000;
+    m = t.match(/(\d+\.?\d*)\s*均/); if(m) return parseFloat(m[1])*60;
+    m = t.match(/(\d+\.?\d*)\s*小时/); if(m) return parseFloat(m[1])*60;
+    m = t.match(/(\d+\.?\d*)\s*分/); if(m) return parseFloat(m[1]);
+    m = t.match(/(\d+\.?\d*)/); if(m) return parseFloat(m[1]);
+    return null;
+  }
+
+  // Detect type
+  var isHospital = text.indexOf('就诊')>-1||text.indexOf('看病')>-1||text.indexOf('去了')>-1||text.indexOf('医院')>-1;
+  var isBalance = text.indexOf('余额')>-1;
+  var isExercise = text.indexOf('爬山')>-1||text.indexOf('自行车')>-1||text.indexOf('跑步')>-1||text.indexOf('八段锦')>-1||text.indexOf('游泳')>-1||text.indexOf('璑璜')>-1||text.indexOf('散步')>-1||text.indexOf('运动')>-1||text.indexOf('太极')>-1||text.indexOf('羽毛球')>-1||text.indexOf('丝梭')>-1;
+
+  if (isHospital) {
+    var dept = '内科';
+    Object.keys(deptKeywords).forEach(function(k){if(text.indexOf(k)>-1)dept=deptKeywords[k]});
+    var cost = extractAmt(text) || 0;
+    result.type = 'visit';
+    result.data = {department: dept, cost: cost, hospital: '就诊', reason: text};
+  } else if (isBalance) {
+    var bal = extractAmt(text);
+    if (bal) { result.type = 'balance'; result.data = {balance: bal}; }
+  } else if (isExercise) {
+    var eTypes = {'爬山':'爬山','自行车':'自行车','跑步':'跑步','八段锦':'八段锦','游泳':'游泳','璑璜':'璑璜','散步':'散步','太极':'公园太极','羽毛球':'羽毛球','丝梭':'丝梭'};
+    var eType = '其他';
+    Object.keys(eTypes).forEach(function(k){if(text.indexOf(k)>-1)eType=eTypes[k]});
+    var dur = extractAmt(text) || 30;
+    result.type = 'exercise';
+    result.data = {type: eType, duration: dur};
+  }
+
+  healthVoiceParsedResult = result;
+  var html = '<div style="font-size:13px;margin-bottom:8px;color:var(--text-secondary)">识别文字：' + text + '</div>';
+  if (!result || !result.type) {
+    html += '<div class="tip-card danger" style="font-size:13px">未能识别出健康或运动信息，请重新录音。</div>';
+  } else if (result.type === 'visit') {
+    html += '<div class="tip-card" style="font-size:13px">🏥 就诊记录<br>科室: '+result.data.department+'<br>费用: ¥'+result.data.cost+'</div>';
+  } else if (result.type === 'balance') {
+    html += '<div class="tip-card" style="font-size:13px">💰 更新医保余额: ¥'+result.data.balance+'</div>';
+  } else if (result.type === 'exercise') {
+    html += '<div class="tip-card" style="font-size:13px">🏃 运动记录<br>类型: '+result.data.type+'<br>时长: '+result.data.duration+'分钟</div>';
+  }
+  document.getElementById('healthVoiceParsedResult').innerHTML = html;
+  document.getElementById('healthVoiceResult').style.display = 'block';
+}
+
+function confirmHealthVoiceSave() {
+  if (!healthVoiceParsedResult || !healthVoiceParsedResult.type) { alert('无数据可保存'); return; }
+  var data = loadData();
+  var today = new Date().toISOString().slice(0,10);
+  if (healthVoiceParsedResult.type === 'visit' || healthVoiceParsedResult.type === 'balance') {
+    if (!data.healthRecords) data.healthRecords = [];
+    var rec = {id:Date.now()+Math.random(), date:today, createdAt:new Date().toISOString()};
+    if (healthVoiceParsedResult.type === 'visit') {
+      rec.type='visit';
+      rec.hospital='就诊';
+      rec.department=healthVoiceParsedResult.data.department;
+      rec.reason=healthVoiceParsedResult.data.reason;
+      rec.cost=healthVoiceParsedResult.data.cost;
+      var prev=data.healthRecords.filter(function(r){return r.insuranceBalance!=null}).sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id});
+      if(prev.length>0&&rec.cost>0){rec.insuranceBalance=prev[0].insuranceBalance-rec.cost}
+    } else {
+      rec.type='balance';
+      rec.insuranceBalance=healthVoiceParsedResult.data.balance;
+    }
+    data.healthRecords.push(rec);
+  } else if (healthVoiceParsedResult.type === 'exercise') {
+    if (!data.exerciseRecords) data.exerciseRecords = [];
+    data.exerciseRecords.push({id:Date.now()+Math.random(), type:healthVoiceParsedResult.data.type, duration:healthVoiceParsedResult.data.duration, date:today, note:'语音记录', createdAt:new Date().toISOString()});
+  }
+  saveData(data);
+  document.getElementById('healthVoiceModal').classList.remove('open');
+  renderAll();
+}
+
+// ============================================================
+// MEAL VOICE INPUT
+// ============================================================
+var mealVoiceRecognition = null;
+var mealVoiceFinalText = '';
+var mealVoiceParsedItems = [];
+
+var mealSlotKeywords = {
+  breakfast: ['早餐','早饭','早上','早晨','早'],
+  lunch: ['午餐','午饭','中午','中饭','中'],
+  dinner: ['晚餐','晚饭','晚上','晚'],
+  snack: ['加餐','零食','下午茶','下午','夜宵','宵夜']
+};
+
+var cnNums = {'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+
+function openMealVoiceModal(){
+  mealVoiceFinalText = '';
+  mealVoiceParsedItems = [];
+  document.getElementById('mealVoiceModal').classList.add('open');
+  document.getElementById('mealVoiceIdle').style.display = 'block';
+  document.getElementById('mealVoiceListening').style.display = 'none';
+  document.getElementById('mealVoiceResult').style.display = 'none';
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('mealVoiceIdle').style.display = 'none';
+    document.getElementById('mealVoiceUnsupported').style.display = 'block';
+  } else {
+    document.getElementById('mealVoiceUnsupported').style.display = 'none';
+  }
+}
+
+function startMealVoiceInput(){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('浏览器不支持语音识别'); return; }
+  document.getElementById('mealVoiceIdle').style.display = 'none';
+  document.getElementById('mealVoiceListening').style.display = 'block';
+  document.getElementById('mealVoiceResult').style.display = 'none';
+  document.getElementById('mealVoiceTranscript').textContent = '';
+  mealVoiceFinalText = '';
+  mealVoiceRecognition = new SR();
+  mealVoiceRecognition.lang = 'zh-CN';
+  mealVoiceRecognition.continuous = true;
+  mealVoiceRecognition.interimResults = true;
+  mealVoiceRecognition.onresult = function(ev) {
+    var t = '';
+    for (var i = ev.resultIndex; i < ev.results.length; i++) {
+      t += ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) mealVoiceFinalText = t;
+    }
+    document.getElementById('mealVoiceTranscript').textContent = t;
+  };
+  mealVoiceRecognition.onerror = function(ev) {
+    document.getElementById('mealVoiceStatus').textContent = '识别出错: ' + ev.error;
+    setTimeout(function() { stopMealVoiceInput(); }, 1500);
+  };
+  mealVoiceRecognition.onend = function() {
+    if (document.getElementById('mealVoiceListening').style.display !== 'none') {
+      document.getElementById('mealVoiceStatus').textContent = '录音已结束';
+      processMealVoiceResult();
+    }
+  };
+  mealVoiceRecognition.start();
+  document.getElementById('mealVoiceStatus').textContent = '正在聆听，请说出今天的饮食...';
+}
+
+function stopMealVoiceInput() {
+  if (mealVoiceRecognition) { mealVoiceRecognition.stop(); mealVoiceRecognition = null; }
+  processMealVoiceResult();
+}
+
+function resetMealVoiceInput() {
+  if (mealVoiceRecognition) { mealVoiceRecognition.stop(); mealVoiceRecognition = null; }
+  mealVoiceFinalText = ''; mealVoiceParsedItems = [];
+  document.getElementById('mealVoiceIdle').style.display = 'block';
+  document.getElementById('mealVoiceListening').style.display = 'none';
+  document.getElementById('mealVoiceResult').style.display = 'none';
+  document.getElementById('mealVoiceTranscript').textContent = '';
+}
+
+function extractAmount(text) {
+  var m = text.match(/(卍)([个份碗杯瓶块根片盘])/);
+  if (m) return '0.5' + m[2];
+  m = text.match(/([零一二两三四五六七八九十十]+)([个份碗杯瓶块根片盘条盒袋罐])/);
+  if (m) {
+    var num = 0, cn = m[1];
+    if (cn.indexOf('十') > -1) {
+      var parts = cn.split('十');
+      if (parts[0] === '' || parts[0] === '一') num = 10;
+      else num = (cnNums[parts[0]] || 1) * 10;
+      if (parts[1]) num += cnNums[parts[1]] || 0;
+    } else { num = cnNums[cn] || 1; }
+    return num + m[2];
+  }
+  m = text.match(/(\d+)\s*([个份碗杯瓶块根片盘])/);
+  if (m) return m[1] + m[2];
+  return '1份';
+}
+
+function detectMealSlot(text) {
+  var bestSlot = 'breakfast', bestScore = 0;
+  var keys = Object.keys(mealSlotKeywords);
+  for (var si = 0; si < keys.length; si++) {
+    var slot = keys[si];
+    var kws = mealSlotKeywords[slot];
+    for (var ki = 0; ki < kws.length; ki++) {
+      if (text.indexOf(kws[ki]) > -1) {
+        if (kws[ki].length > bestScore) { bestScore = kws[ki].length; bestSlot = slot; }
+      }
+    }
+  }
+  return bestSlot;
+}
+
+function parseMealVoiceText(text) {
+  text = text.replace(/[，,.?!；：～~、]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text) return [];
+  var items = [];
+  var currentSlot = 'breakfast';
+  
+  // Split by punctuation for segments
+  var segments = text.split(/[，,.]/).filter(function(s) { return s.trim(); });
+  if (segments.length <= 1) {
+    segments = text.split(/[和还有以及与\s+]/).filter(function(s) { return s.trim(); });
+  }
+  
+  segments.forEach(function(seg) {
+    var s = seg.trim();
+    if (!s) return;
+    // Detect slot from this segment
+    var segSlot = detectMealSlot(s);
+    if (segSlot !== 'breakfast') currentSlot = segSlot;
+    // Remove slot keywords
+    var kws = mealSlotKeywords[currentSlot];
+    for (var ki = 0; ki < kws.length; ki++) {
+      s = s.replace(kws[ki], '');
+    }
+    s = s.replace(/[了和还有以及与]/g, ' ').trim();
+    if (!s) return;
+    
+    // Extract individual food items
+    var foodParts = s.split(/[\s]+/).filter(function(p) { return p.trim(); });
+    if (foodParts.length === 0) foodParts = [s];
+    
+    foodParts.forEach(function(f) {
+      f = f.trim();
+      if (!f) return;
+      if (f.match(/^\d+/) || f.match(/^[零一二两三四五六七八九十]/)) return;
+      
+      var amount = extractAmount(f);
+      var name = f.replace(/(卍|[零一二两三四五六七八九十]+)[个份碗杯瓶块根片盘条盒袋罐]/g, '').replace(/\d+\s*[个份碗杯瓶块根片盘]/g, '').trim();
+      if (!name || name.length > 10) return;
+      
+      // Match against FOOD_DB
+      var matchedName = name, matchedInfo = null;
+      var dbNames = Object.keys(FOOD_DB);
+      if (FOOD_DB[name]) { matchedName = name; matchedInfo = FOOD_DB[name]; }
+      else {
+        var bestMatch = '', bestLen = 0;
+        for (var di = 0; di < dbNames.length; di++) {
+          var dbn = dbNames[di];
+          if (name.indexOf(dbn) > -1 && dbn.length > bestLen) { bestLen = dbn.length; bestMatch = dbn; }
+          else if (dbn.indexOf(name) > -1 && name.length > bestLen) { bestLen = name.length; bestMatch = dbn; }
+        }
+        if (bestMatch) { matchedName = bestMatch; matchedInfo = FOOD_DB[bestMatch]; }
+      }
+      items.push({
+        slot: currentSlot,
+        name: matchedName,
+        amount: amount,
+        cat: matchedInfo ? matchedInfo.cat : '其他',
+        icon: matchedInfo ? matchedInfo.icon : '📝',
+        elements: matchedInfo ? matchedInfo.ele : []
+      });
+    });
+  });
+  
+  return items;
+}
+
+function processMealVoiceResult() {
+  var text = mealVoiceFinalText || document.getElementById('mealVoiceTranscript').textContent;
+  if (!text.trim()) { resetMealVoiceInput(); return; }
+  document.getElementById('mealVoiceListening').style.display = 'none';
+  mealVoiceParsedItems = parseMealVoiceText(text);
+  
+  var html = '<div style="font-size:13px;margin-bottom:8px;color:var(--text-secondary)">识别文字：' + text + '</div>';
+  if (mealVoiceParsedItems.length === 0) {
+    html += '<div class="tip-card danger" style="font-size:13px">没有识别出食物信息，请重新录音，尽量说出具体的食物名称。</div>';
+  } else {
+    var groups = {};
+    mealVoiceParsedItems.forEach(function(item) {
+      if (!groups[item.slot]) groups[item.slot] = [];
+      groups[item.slot].push(item);
+    });
+    var slotNames = { breakfast:'🌅 早餐', lunch:'☀️ 午餐', dinner:'🌙 晚餐', snack:'🍪 加餐' };
+    var slotOrder = ['breakfast','lunch','dinner','snack'];
+    for (var gi = 0; gi < slotOrder.length; gi++) {
+      var slot = slotOrder[gi];
+      if (groups[slot]) {
+        html += '<div style="font-size:14px;font-weight:600;margin:8px 0 4px;padding:4px 0;border-bottom:1px solid var(--border)">' + (slotNames[slot] || slot) + '</div>';
+        groups[slot].forEach(function(item) {
+          var eleHtml = '';
+          for (var ei = 0; ei < (item.elements || []).length; ei++) {
+            var e = item.elements[ei];
+            var cls = e[1]==='healthy'?'ht-green':e[1]==='unhealthy'?'ht-red':'ht-yellow';
+            eleHtml += '<span class="health-tag ' + cls + '">' + e[0] + '</span>';
+          }
+          html += '<div style="display:flex;align-items:center;padding:4px 0;font-size:13px">' +
+            '<span style="margin-right:6px">' + item.icon + '</span>' +
+            '<span style="flex:1">' + item.name + ' <span style="color:var(--text-secondary)">' + item.amount + '</span></span>' +
+            '<span>' + eleHtml + '</span></div>';
+        });
+      }
+    }
+  }
+  document.getElementById('mealVoiceParsedResult').innerHTML = html;
+  document.getElementById('mealVoiceResult').style.display = 'block';
+}
+
+function confirmMealVoiceSave() {
+  if (mealVoiceParsedItems.length === 0) { alert('没有食物信息可保存'); return; }
+  var data = loadData();
+  var dk = getMealDayKey(currentMealDay);
+  if (!data.mealDays) data.mealDays = {};
+  if (!data.mealDays[dk]) data.mealDays[dk] = { breakfast:[], lunch:[], dinner:[], snack:[] };
+  
+  mealVoiceParsedItems.forEach(function(item) {
+    data.mealDays[dk][item.slot].push({
+      name: item.name, amount: item.amount, cat: item.cat,
+      icon: item.icon, elements: item.elements
+    });
+  });
+  
+  saveData(data);
+  document.getElementById('mealVoiceModal').classList.remove('open');
+  renderMeals();
+}
+
+// ============================================================
+// VOICE
+// ============================================================
+function openVoiceModal(){$('voiceModal').classList.add('open');$('voiceIdle').style.display='block';$('voiceListening').style.display='none';$('voiceResult').style.display='none';var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('voiceIdle').style.display='none';$('voiceUnsupported').style.display='block'}else{$('voiceUnsupported').style.display='none'}}
+function closeVoiceModal(){$('voiceModal').classList.remove('open')}
+function startVoiceInput(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('浏览器不支持语音识别，请使用Chrome');return}
+  $('voiceIdle').style.display='none';$('voiceListening').style.display='block';$('voiceResult').style.display='none';$('voiceTranscript').textContent='';voiceFinalText='';
+  recognition=new SR();recognition.lang='zh-CN';recognition.continuous=true;recognition.interimResults=true;
+  recognition.onresult=function(ev){var t='';for(var i=ev.resultIndex;i<ev.results.length;i++){t+=ev.results[i][0].transcript;if(ev.results[i].isFinal)voiceFinalText=t}$('voiceTranscript').textContent=t};
+  recognition.onerror=function(ev){$('voiceStatus').textContent='识别出错: '+ev.error;setTimeout(function(){stopVoiceInput()},1500)};
+  recognition.onend=function(){if($('voiceListening').style.display!=='none'){$('voiceStatus').textContent='录音已结束';processVoiceResult()}};
+  recognition.start();$('voiceStatus').textContent='正在聆听，请说话...';
+}
+function stopVoiceInput(){if(recognition){recognition.stop();recognition=null}processVoiceResult()}
+function resetVoiceInput(){if(recognition){recognition.stop();recognition=null}voiceFinalText='';voiceParsedRecord=null;$('voiceIdle').style.display='block';$('voiceListening').style.display='none';$('voiceResult').style.display='none';$('voiceTranscript').textContent=''}
+
+function processVoiceResult(){
+  var text=voiceFinalText||$('voiceTranscript').textContent;
+  if(!text.trim()){resetVoiceInput();return}
+  $('voiceListening').style.display='none';voiceParsedRecord=parseVoiceText(text);
+  var html='<div class="vp-row"><span class="vp-label">识别内容</span><span class="vp-value">'+text+'</span></div>';
+  if(voiceParsedRecord){
+    html+='<div class="vp-row"><span class="vp-label">类型</span><span class="vp-value">'+getTypeDisplay(voiceParsedRecord)+'</span></div>';
+    html+='<div class="vp-row"><span class="vp-label">金额</span><span class="vp-value">'+formatMoney(voiceParsedRecord.amount)+'</span></div>';
+    if(voiceParsedRecord.category)html+='<div class="vp-row"><span class="vp-label">分类</span><span class="vp-value">'+voiceParsedRecord.category+'</span></div>';
+    html+='<div class="vp-row"><span class="vp-label">日期</span><span class="vp-value">'+voiceParsedRecord.date+'</span></div>';
+    if(voiceParsedRecord.reason)html+='<div class="vp-row"><span class="vp-label">备注</span><span class="vp-value">'+voiceParsedRecord.reason+'</span></div>';
+  }else{
+    html+='<div style="color:var(--danger);font-size:13px;margin-top:8px">⚠️ 未能识别出有效的记账信息</div>';
+  }
+  $('voiceParsedResult').innerHTML=html;$('voiceResult').style.display='block';
+}
+
+function getTypeDisplay(r){
+  if(r.type==='income')return '收入'+(r.incomeSub?'('+incomeLabels[r.incomeSub]+')':'');
+  if(r.type==='expense')return '支出';if(r.type==='savings')return '存款';
+  if(r.type==='redpacket')return '红包';if(r.type==='loan')return '借贷还款'+(r.loanSub?'('+loanLabels[r.loanSub]+')':'');
+  if(r.type==='meal')return '饮食';return '';
+}
+
+function confirmVoiceSave(){
+  if(!voiceParsedRecord){alert('无法保存');return}
+  var data=loadData();var r=voiceParsedRecord;
+  var rec={id:Date.now()+Math.random(),type:r.type,amount:r.amount,date:r.date,reason:r.reason||'',createdAt:new Date().toISOString()};
+  if(r.type==='income'){rec.incomeSub=r.incomeSub||'salary';rec.category=incomeLabels[rec.incomeSub]}
+  else if(r.type==='expense'){rec.category=r.category||'其他'}
+  else if(r.type==='loan'){rec.loanSub=r.loanSub||'huabei';rec.category=loanLabels[rec.loanSub]}
+  else if(r.type==='meal'){rec.category='餐饮';rec.mealDetails={nutrition:5,vitamins:'medium',volume:'normal',note:r.reason||''}}
+  else if(r.type==='savings')rec.category='存款';
+  else if(r.type==='redpacket')rec.category='红包';
+  data.records.push(rec);saveData(data);closeVoiceModal();renderAll();switchPage('records');
+}
+
+
+// ============================================================
+// SAVE MANUAL
+// ============================================================
+function saveRecord(){
+  var type=currentRecordType,amount=parseFloat($('recordAmount').value),date=$('recordDate').value,reason=$('recordReason').value.trim();
+  if(!amount||amount<=0){alert('请输入有效金额');return}if(!date){alert('请选择日期');return}
+  var data=loadData();var rec={id:Date.now()+Math.random(),type:type,amount:Math.abs(amount),date:date,reason:reason||'',createdAt:new Date().toISOString()};
+  if(type==='income'){rec.incomeSub=currentIncomeSub;rec.category=incomeLabels[currentIncomeSub]}
+  else if(type==='loan'){rec.loanSub=currentLoanSub;rec.category=loanLabels[currentLoanSub]}
+  else if(type==='expense')rec.category=$('recordCategory').value;
+  else if(type==='savings')rec.category='存款';else if(type==='redpacket')rec.category='红包';
+  data.records.push(rec);saveData(data);$('addModal').classList.remove('open');renderAll();
+}
+
+function saveHealth(){
+  var type=currentHealthType,date=$('healthDate').value;
+  if(!date){alert('请选择日期');return}
+  var data=loadData();
+  var rec={id:Date.now()+Math.random(),type:type,date:date,createdAt:new Date().toISOString()};
+  if(type==='visit'){
+    rec.hospital=$('healthHospital').value.trim()||'未知医院';
+    rec.department=$('healthDepartment').value;
+    rec.reason=$('healthReason').value.trim()||'就诊';
+    rec.cost=parseFloat($('healthCost').value)||0;
+    var inputIns=parseFloat($('healthInsurance').value);
+    if(!isNaN(inputIns)&&inputIns>=0){rec.insuranceBalance=inputIns}
+    else{var prev=data.healthRecords.filter(function(r){return r.insuranceBalance!=null}).sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id});if(prev.length>0&&rec.cost>0){rec.insuranceBalance=prev[0].insuranceBalance-rec.cost}}
+  }else{
+    var insurance=parseFloat($('healthInsurance').value);
+    if(!isNaN(insurance)&&insurance>=0)rec.insuranceBalance=insurance;
+  }
+  data.healthRecords.push(rec);saveData(data);$('healthModal').classList.remove('open');renderAll();
+}
+
+function deleteRecord(id){if(!confirm('确定删除？'))return;var data=loadData();data.records=data.records.filter(function(r){return r.id!==id});saveData(data);renderAll()}
+function deleteHealthRecord(id){if(!confirm('确定删除？'))return;var data=loadData();data.healthRecords=data.healthRecords.filter(function(r){return r.id!==id});saveData(data);renderAll()}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderAll(){renderDashboard();renderRecords();renderMeals();renderHealth();renderAnalysis()}
+
+function getMonthRecords(){
+  var data=loadData();
+  var mKey=getMonthKey(currentMonth);
+  return data.records.filter(function(r){return getMonthKey(r.date)===mKey});
+}
+
+function renderRecordRow(r){
+  var icon,cls,label;
+  if(r.type==='income'){cls='income-icon';icon='💰';label=incomeLabels[r.incomeSub]||'收入'}
+  else if(r.type==='redpacket'){cls='redpacket-icon';icon='🧧';label='红包'}
+  else if(r.type==='loan'){cls='loan-icon';icon='💳';label=loanLabels[r.loanSub]||'借贷'}
+  else if(r.type==='savings'){cls='savings-icon';icon='🏦';label='存款'}
+  else if(r.type==='meal'){cls='meal-icon';icon='🍽️';label='饮食'}
+  else{cls='expense-icon';icon='💸';label='支出'}
+  var amtCls=(r.type==='income'||r.type==='redpacket')?'positive':'negative';
+  var sign=(r.type==='income'||r.type==='redpacket')?'+':'-';
+  var subTag='';
+  if(r.incomeSub)subTag=' <span class="sub-type-tag tag-'+r.incomeSub+'">'+incomeLabels[r.incomeSub]+'</span>';
+  if(r.loanSub)subTag=' <span class="sub-type-tag tag-'+r.loanSub+'">'+loanLabels[r.loanSub]+'</span>';
+  return '<div class="record-item"><div class="record-icon '+cls+'">'+icon+'</div><div class="record-info"><div class="name">'+(r.reason||label)+subTag+'</div><div class="reason">'+(r.category||'')+'</div></div><div style="text-align:right"><div class="record-amount '+amtCls+'">'+sign+formatMoney(r.amount)+'</div></div><button class="delete-btn" onclick="deleteRecord('+r.id+')">×</button></div>';
+}
+
+// ---------- DASHBOARD ----------
+
+
+// ---------- RECORDS ----------
+
+
+// ---------- MEALS ----------
+
+
+
+
+
+// ---------- HEALTH ----------
+
+
+// ---------- ANALYSIS ----------
+
+
+// ============================================================
+// EXERCISE TRACKING
+// ============================================================
+var exerciseTypeLabels = {'爬山':'🏔️','自行车':'🚴','八段锦':'🩸','跑步':'🏃','游泳':'🏊','璑璜':'🧘','力量训练':'💪','散步':'🚶','公园太极':'🤸','羽毛球':'🏸','丝梭':'🤸','其他':'🏃'};
+// INIT
+// ============================================================
+updateMonthLabel();
+renderAll();
+</script>
+
+
+
+</body>
+</html>

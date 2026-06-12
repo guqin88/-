@@ -1,0 +1,21 @@
+{
+  "name": "zhangzhang",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Web assets are static, no build needed'",
+    "sync": "npx cap sync ios",
+    "test": "npx jest",
+    "test:watch": "npx jest --watch",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
+  }
+}
