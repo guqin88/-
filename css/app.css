@@ -197,19 +197,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
 /* ============================================================ */
 /* Mobile: 全屏展示 - 覆盖 sticky 和溢出问题 */
 /* ============================================================ */
-@media (max-width: 430px) {
+
+/* ============================================================ */
+/* Mobile: 全屏展示 */
+/* ============================================================ */
+@media (max-width: 768px) {
   body {
+    margin: 0;
+    padding: 0;
     align-items: flex-start;
     justify-content: flex-start;
-    min-height: 100dvh; min-height: 0;
+    min-height: 100dvh;
   }
   .phone-frame {
-    width: 100%;
-    height: 100dvh; min-height: 0;
-    max-height: 100dvh; min-height: 0;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: clip;
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
   }
   .dynamic-island {
     display: none !important;
@@ -217,33 +223,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
   .app-header {
     position: static !important;
     top: 0 !important;
-    padding-top: max(12px, env(safe-area-inset-top, 0px));
-    padding-bottom: 6px;
+    padding-top: max(44px, env(safe-area-inset-top, 44px));
+    padding-bottom: 8px;
     z-index: auto !important;
     flex-shrink: 0;
   }
   .app-content {
-    flex: 1; min-height: 0;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 8px 16px 120px;
+    padding: 100px 16px 140px;
   }
   .bottom-tabs {
     position: static !important;
     bottom: auto !important;
     flex-shrink: 0;
-    padding: 6px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+    padding: 6px 0 calc(20px + env(safe-area-inset-bottom, 0px));
     z-index: auto !important;
+  }
+  .month-selector {
+    padding-right: 4px;
   }
   .voice-fab {
     position: sticky;
     bottom: 12px;
     z-index: 50;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-  }
-  .voice-fab-btn {
-    pointer-events: auto;
   }
 }
