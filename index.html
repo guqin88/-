@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<script>if(window.Capacitor&&window.Capacitor.isNative){document.documentElement.classList.add("native-app")}</script>
+<script>if((window.Capacitor&&window.Capacitor.isNative)||window.innerWidth<=768){document.documentElement.classList.add("native-app")}</script>
 </head>
 <body>
 
