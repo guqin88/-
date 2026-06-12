@@ -193,6 +193,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
 /* ============================================================ */
 /* Mobile: 移除 iPhone 外壳, 全屏展示 */
 /* ============================================================ */
+
+/* ============================================================ */
+/* Mobile: 全屏展示 - 覆盖 sticky 和溢出问题 */
+/* ============================================================ */
 @media (max-width: 430px) {
   body {
     align-items: flex-start;
@@ -205,17 +209,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
     max-height: 100dvh;
     border-radius: 0;
     box-shadow: none;
+    overflow: clip;
   }
   .dynamic-island {
-    display: none;
+    display: none !important;
   }
   .app-header {
-    padding-top: 12px;
+    position: static !important;
+    top: 0 !important;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: 6px;
+    z-index: auto !important;
+    flex-shrink: 0;
   }
   .app-content {
-    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 16px 120px;
   }
   .bottom-tabs {
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    position: static !important;
+    bottom: auto !important;
+    flex-shrink: 0;
+    padding: 6px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: auto !important;
+  }
+  .voice-fab {
+    position: sticky;
+    bottom: 12px;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .voice-fab-btn {
+    pointer-events: auto;
   }
 }
