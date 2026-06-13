@@ -20,9 +20,11 @@ function formatDate(dateStr) {
 function friendlyDate(dateStr) {
   var d = new Date(dateStr);
   var today = new Date();
+  var todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   var yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
-  if (formatDate(dateStr) === formatDate(today.toISOString().slice(0,10))) return '今天';
-  if (formatDate(dateStr) === formatDate(yesterday.toISOString().slice(0,10))) return '昨天';
+  var yesterdayStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  if (formatDate(dateStr) === todayStr) return '今天';
+  if (formatDate(dateStr) === yesterdayStr) return '昨天';
   return (d.getMonth()+1)+'月'+d.getDate()+'日';
 }
 
