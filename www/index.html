@@ -505,12 +505,18 @@ function updateMonthLabel() { $('currentMonth').textContent = currentMonth.getFu
 function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth()+delta, 1); updateMonthLabel(); renderAll(); }
 
 function switchPage(name) {
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');p.style.display='none'});
+  console.log('switchPage:',name);
+  var pages=document.querySelectorAll('.page');
+  pages.forEach(function(p){p.classList.remove('active');p.style.setProperty('display','none','important')});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
-  var el=document.getElementById('page-'+name);if(el){el.classList.add('active');el.style.display='block'}
-  var tb=document.querySelector('.tab[data-page="'+name+'"]');if(tb)tb.classList.add('active');
-  var tl=document.getElementById('pageTitle');if(tl)tl.textContent=pageTitles[name];
-  var ct=document.getElementById('appContent');if(ct)ct.scrollTop=0;
+  var el=document.getElementById('page-'+name);
+  if(el){el.classList.add('active');el.style.removeProperty('display');el.style.setProperty('display','block','important')}
+  var tb=document.querySelector('.tab[data-page="'+name+'"]');
+  if(tb)tb.classList.add('active');
+  var tl=document.getElementById('pageTitle');
+  if(tl)tl.textContent=pageTitles[name];
+  var ct=document.getElementById('appContent');
+  if(ct)ct.scrollTop=0;
   renderAll();
 }
 
