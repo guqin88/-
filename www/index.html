@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>记账本</title>
 <script src="js/lib/chart.umd.min.js"></script>
 <link rel="stylesheet" href="css/app.css">
@@ -44,14 +44,12 @@
       <div class="quick-stats">
         <div class="quick-stat"><div class="qs-value" id="dashRedpacket">¥0</div><div class="qs-label">红包</div></div>
         <div class="quick-stat"><div class="qs-value" id="dashLoan">¥0</div><div class="qs-label">借贷还款</div></div>
-        <div class="quick-stat"><div class="qs-value" id="dashMeals">¥0</div><div class="qs-label">饮食</div></div>
+        <div class="quick-stat"><div class="qs-value" id="dashMeals">¥0</div><div class="qs-label">餐饮</div></div>
       </div>
       <div class="card"><div class="card-title">收入构成</div><div id="incomeBreakdownContent" style="font-size:13px;color:var(--text-secondary)">暂无收入</div></div>
       <div class="card"><div class="card-title">借贷构成</div><div id="loanBreakdownContent" style="font-size:13px;color:var(--text-secondary)">暂无借贷</div></div>
       <div class="section-title">近期记录</div>
       <div id="dashboardRecords"></div>
-      <div class="voice-fab"><button class="voice-fab-btn" onclick="openVoiceModal()" title="语音记账">🎤</button></div>
-    </div>
 
     <!-- RECORDS -->
     <div class="page" id="page-records">
@@ -503,7 +501,7 @@ function $(id) { return document.getElementById(id); }
 // ============================================================
 // ============================================================
 function updateMonthLabel() { $('currentMonth').textContent = currentMonth.getFullYear()+'年'+(currentMonth.getMonth()+1)+'月'; }
-function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth()+delta); updateMonthLabel(); renderAll(); }
+function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth()+delta, 1); updateMonthLabel(); renderAll(); }
 
 function switchPage(name) {
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});

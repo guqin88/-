@@ -9,8 +9,8 @@ function renderDashboard(){
   var lb={huabei:0,jd:0,credit_card:0};
   records.forEach(function(r){
     if(r.type==='income'){income+=r.amount;if(r.incomeSub)ib[r.incomeSub]=(ib[r.incomeSub]||0)+r.amount}
+    else if(r.category==='餐饮')meals+=r.amount;
     else if(r.type==='expense')expense+=r.amount;
-    else if(r.type==='meal')meals+=r.amount;
     else if(r.type==='redpacket')redpacket+=r.amount;
     else if(r.type==='savings')savings+=r.amount;
     else if(r.type==='loan'){loan+=r.amount;if(r.loanSub)lb[r.loanSub]=(lb[r.loanSub]||0)+r.amount}
