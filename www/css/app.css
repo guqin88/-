@@ -239,7 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro","PingFang SC","Helvet
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
   .bottom-tabs {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
     position: static;
   }
 }
