@@ -62,6 +62,6 @@ describe('getDefaultData', () => {
     expect(data).toHaveProperty('monthlyBudget');
     expect(Array.isArray(data.records)).toBe(true);
     expect(Array.isArray(data.healthRecords)).toBe(true);
-    expect(data.monthlyBudget.food).toBe(1197.45);
+    expect(data.monthlyBudget.food).toBe(1195.2);
   });
 });

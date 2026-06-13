@@ -4,7 +4,7 @@
  */
 
 function getDefaultData() {
-  return { records:[], healthRecords:[], exerciseRecords:[], mealDays:{}, monthlyBudget:{ food:1197.45, transport:239.49, shopping:638.64, entertainment:399.15, housing:1596.60, medical:399.15, other:319.31 } };
+  return { records:[], healthRecords:[], exerciseRecords:[], mealDays:{}, monthlyBudget:{ food:1195.20, transport:239.04, shopping:637.44, entertainment:398.40, housing:1593.60, medical:398.40, other:318.71 } };
 }
 
 function getMonthKey(date) {
