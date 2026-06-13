@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/app.css">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>if((window.Capacitor&&window.Capacitor.isNative)||window.innerWidth<=768){document.documentElement.classList.add("native-app")}</script>
 </head>
@@ -504,12 +505,12 @@ function updateMonthLabel() { $('currentMonth').textContent = currentMonth.getFu
 function changeMonth(delta) { currentMonth.setMonth(currentMonth.getMonth()+delta, 1); updateMonthLabel(); renderAll(); }
 
 function switchPage(name) {
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');p.style.display='none'});
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
-  $('page-'+name).classList.add('active');
-  document.querySelector('.tab[data-page="'+name+'"]').classList.add('active');
-  $('pageTitle').textContent = pageTitles[name];
-  $('appContent').scrollTop = 0;
+  var el=document.getElementById('page-'+name);if(el){el.classList.add('active');el.style.display='block'}
+  var tb=document.querySelector('.tab[data-page="'+name+'"]');if(tb)tb.classList.add('active');
+  var tl=document.getElementById('pageTitle');if(tl)tl.textContent=pageTitles[name];
+  var ct=document.getElementById('appContent');if(ct)ct.scrollTop=0;
   renderAll();
 }
 
