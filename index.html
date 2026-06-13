@@ -1085,6 +1085,7 @@ function renderRecordRow(r){
 var exerciseTypeLabels = {'爬山':'🏔️','自行车':'🚴','八段锦':'🩸','跑步':'🏃','游泳':'🏊','璑璜':'🧘','力量训练':'💪','散步':'🚶','公园太极':'🤸','羽毛球':'🏸','丝梭':'🤸','其他':'🏃'};
 // INIT
 // ============================================================
+try{document.querySelectorAll(".page").forEach(function(p){if(p.id!="page-dashboard")p.style.setProperty("display","none","important")})}catch(e){}
 try{updateMonthLabel()}catch(e){console.error("init1",e)}
 try{renderAll()}catch(e){console.error("init2",e)}
 </script>
