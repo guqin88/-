@@ -1030,7 +1030,7 @@ function deleteHealthRecord(id){if(!confirm('确定删除？'))return;var data=l
 // ============================================================
 // RENDER
 // ============================================================
-function renderAll(){renderDashboard();renderRecords();renderMeals();renderHealth();renderAnalysis()}
+function renderAll(){try{renderDashboard()}catch(e){}try{renderRecords()}catch(e){}try{renderMeals()}catch(e){}try{renderHealth()}catch(e){}try{renderAnalysis()}catch(e){}}
 
 function getMonthRecords(){
   var data=loadData();
