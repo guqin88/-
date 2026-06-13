@@ -1030,7 +1030,7 @@ function deleteHealthRecord(id){if(!confirm('确定删除？'))return;var data=l
 // ============================================================
 // RENDER
 // ============================================================
-function renderAll(){try{renderDashboard()}catch(e){}try{renderRecords()}catch(e){}try{renderMeals()}catch(e){}try{renderHealth()}catch(e){}try{renderAnalysis()}catch(e){}}
+function renderAll(){try{renderDashboard()}catch(e){console.error("dash",e)}try{renderRecords()}catch(e){console.error("rec",e)}try{renderMeals()}catch(e){console.error("meal",e)}try{renderHealth()}catch(e){console.error("health",e)}try{renderAnalysis()}catch(e){console.error("analysis",e)}}
 
 function getMonthRecords(){
   var data=loadData();
@@ -1078,8 +1078,8 @@ function renderRecordRow(r){
 var exerciseTypeLabels = {'爬山':'🏔️','自行车':'🚴','八段锦':'🩸','跑步':'🏃','游泳':'🏊','璑璜':'🧘','力量训练':'💪','散步':'🚶','公园太极':'🤸','羽毛球':'🏸','丝梭':'🤸','其他':'🏃'};
 // INIT
 // ============================================================
-updateMonthLabel();
-renderAll();
+try{updateMonthLabel()}catch(e){console.error("init1",e)}
+try{renderAll()}catch(e){console.error("init2",e)}
 </script>
 
 
